@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tetris Móvil y PC</title>
+  <link rel="icon" href="data:," />
   <style>
     body {
       margin: 0;
@@ -13,6 +15,7 @@
       align-items: center;
       font-family: Arial, sans-serif;
     }
+
     #tetris {
       display: grid;
       grid-template-columns: repeat(10, 30px);
@@ -21,18 +24,22 @@
       background: #222;
       margin-top: 20px;
     }
+
     .cell {
       width: 30px;
       height: 30px;
       background: #111;
       border: 1px solid #333;
     }
+
     .filled {
       background: #0ff;
     }
+
     .fixed {
       background: #09f;
     }
+
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -40,17 +47,30 @@
       gap: 10px;
       margin-top: 20px;
     }
+
     .btn {
-      background: #444;
-      color: white;
-      border: none;
-      padding: 15px;
-      font-size: 18px;
-      border-radius: 5px;
-      width: 80px;
-    }
+  background: #444;
+  color: white;
+  border: none;
+  padding: 15px;
+  font-size: 18px;
+  border-radius: 5px;
+  /* width: 80px;  <-- Quitamos esta línea */
+  min-width: 80px; /* Opcional: asegura un tamaño mínimo */
+  white-space: nowrap; /* Opcional: evita salto de línea */
+}
+
+
     .btn:active {
       background: #666;
+    }
+
+    .btn-link {
+      background: #008CBA;
+    }
+
+    .btn-link:active {
+      background: #006080;
     }
   </style>
 </head>
@@ -58,12 +78,12 @@
   <h2>Tetris</h2>
   <div id="tetris"></div>
 
-  <!-- BOTONES TÁCTILES -->
   <div class="controls">
     <button class="btn" onclick="rotate()">⤴️</button>
     <button class="btn" onclick="move(-1)">⬅️</button>
     <button class="btn" onclick="move(1)">➡️</button>
     <button class="btn" onclick="moveDown()">⬇️</button>
+    <button class="btn btn-link" onclick="goToEvangelioTetris()">🎮 Tetris Evangelio</button>
   </div>
 
   <script>
@@ -80,11 +100,11 @@
     }
 
     const tetrominoes = {
-      I: [[1, width+1, width*2+1, width*3+1], [width, width+1, width+2, width+3]],
-      O: [[0, 1, width, width+1]],
-      T: [[1, width, width+1, width+2], [1, width+1, width+2, width*2+1]],
-      L: [[1, width+1, width*2+1, 2], [width, width+1, width+2, width*2+2]],
-      Z: [[0, width, width+1, width*2+1], [width+1, width+2, width*2, width*2+1]]
+      I: [[1, width + 1, width * 2 + 1, width * 3 + 1], [width, width + 1, width + 2, width + 3]],
+      O: [[0, 1, width, width + 1]],
+      T: [[1, width, width + 1, width + 2], [1, width + 1, width + 2, width * 2 + 1]],
+      L: [[1, width + 1, width * 2 + 1, 2], [width, width + 1, width + 2, width * 2 + 2]],
+      Z: [[0, width, width + 1, width * 2 + 1], [width + 1, width + 2, width * 2, width * 2 + 1]]
     };
 
     const tetrominoKeys = Object.keys(tetrominoes);
@@ -206,8 +226,11 @@
       else if (e.key === "ArrowUp") rotate();
     }
 
-    document.addEventListener("keydown", control);
+    function goToEvangelioTetris() {
+      window.location.href = "evangelio.html";
+    }
 
+    document.addEventListener("keydown", control);
     draw();
     const timerId = setInterval(moveDown, 700);
   </script>
