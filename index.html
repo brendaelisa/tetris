@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Tetris Móvil y PC</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: Arial, sans-serif;
+    }
+    #tetris {
+      display: grid;
+      grid-template-columns: repeat(10, 30px);
+      grid-template-rows: repeat(20, 30px);
+      gap: 1px;
+      background: #222;
+      margin-top: 20px;
+    }
+    .cell {
+      width: 30px;
+      height: 30px;
+      background: #111;
+      border: 1px solid #333;
+    }
+    .filled {
+      background: #0ff;
+    }
+    .fixed {
+      background: #09f;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn {
+      background: #444;
+      color: white;
+      border: none;
+      padding: 15px;
+      font-size: 18px;
+      border-radius: 5px;
+      width: 80px;
+    }
+    .btn:active {
+      background: #666;
+    }
+  </style>
+</head>
+<body>
+  <h2>Tetris</h2>
+  <div id="tetris"></div>
+
+  <!-- BOTONES TÁCTILES -->
+  <div class="controls">
+    <button class="btn" onclick="rotate()">⤴️</button>
+    <button class="btn" onclick="move(-1)">⬅️</button>
+    <button class="btn" onclick="move(1)">➡️</button>
+    <button class="btn" onclick="moveDown()">⬇️</button>
+  </div>
+
+  <script>
+    const width = 10;
+    const height = 20;
+    const grid = document.getElementById("tetris");
+
+    const cells = [];
+    for (let i = 0; i < width * height; i++) {
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+      grid.appendChild(cell);
+      cells.push(cell);
+    }
+
+    const tetrominoes = {
+      I: [[1, width+1, width*2+1, width*3+1], [width, width+1, width+2, width+3]],
+      O: [[0, 1, width, width+1]],
+      T: [[1, width, width+1, width+2], [1, width+1, width+2, width*2+1]],
+      L: [[1, width+1, width*2+1, 2], [width, width+1, width+2, width*2+2]],
+      Z: [[0, width, width+1, width*2+1], [width+1, width+2, width*2, width*2+1]]
+    };
+
+    const tetrominoKeys = Object.keys(tetrominoes);
+
+    let currentPosition = 4;
+    let currentShape = getRandomShape();
+
+    function getRandomShape() {
+      const name = tetrominoKeys[Math.floor(Math.random() * tetrominoKeys.length)];
+      return {
+        name,
+        rotations: tetrominoes[name],
+        rotationIndex: 0
+      };
+    }
+
+    function draw() {
+      currentShape.rotations[currentShape.rotationIndex].forEach(index => {
+        const pos = currentPosition + index;
+        if (cells[pos]) cells[pos].classList.add("filled");
+      });
+    }
+
+    function undraw() {
+      currentShape.rotations[currentShape.rotationIndex].forEach(index => {
+        const pos = currentPosition + index;
+        if (cells[pos]) cells[pos].classList.remove("filled");
+      });
+    }
+
+    function isBlocked(offset) {
+      return currentShape.rotations[currentShape.rotationIndex].some(index => {
+        const pos = currentPosition + index + offset;
+        return (
+          pos >= width * height ||
+          cells[pos]?.classList.contains("fixed")
+        );
+      });
+    }
+
+    function moveDown() {
+      if (!isBlocked(width)) {
+        undraw();
+        currentPosition += width;
+        draw();
+      } else {
+        fixShape();
+        clearLines();
+        newShape();
+      }
+    }
+
+    function move(dir) {
+      undraw();
+      const shape = currentShape.rotations[currentShape.rotationIndex];
+      const isEdge = shape.some(index => {
+        const col = (currentPosition + index) % width;
+        return (dir === -1 && col === 0) || (dir === 1 && col === width - 1);
+      });
+      if (!isEdge && !isBlocked(dir)) {
+        currentPosition += dir;
+      }
+      draw();
+    }
+
+    function rotate() {
+      undraw();
+      const prevRotation = currentShape.rotationIndex;
+      currentShape.rotationIndex = (currentShape.rotationIndex + 1) % currentShape.rotations.length;
+      if (isBlocked(0)) {
+        currentShape.rotationIndex = prevRotation;
+      }
+      draw();
+    }
+
+    function fixShape() {
+      currentShape.rotations[currentShape.rotationIndex].forEach(index => {
+        const pos = currentPosition + index;
+        if (cells[pos]) {
+          cells[pos].classList.remove("filled");
+          cells[pos].classList.add("fixed");
+        }
+      });
+    }
+
+    function clearLines() {
+      for (let row = 0; row < height; row++) {
+        const start = row * width;
+        const line = cells.slice(start, start + width);
+        if (line.every(cell => cell.classList.contains("fixed"))) {
+          line.forEach(cell => cell.classList.remove("fixed"));
+          const removed = cells.splice(start, width);
+          removed.forEach(cell => {
+            cell.classList.remove("filled");
+            const newCell = document.createElement("div");
+            newCell.classList.add("cell");
+            grid.insertBefore(newCell, grid.firstChild);
+            cells.unshift(newCell);
+          });
+        }
+      }
+    }
+
+    function newShape() {
+      currentShape = getRandomShape();
+      currentPosition = 4;
+      if (isBlocked(0)) {
+        alert("🛑 ¡Juego terminado!");
+        clearInterval(timerId);
+      } else {
+        draw();
+      }
+    }
+
+    function control(e) {
+      if (e.key === "ArrowLeft") move(-1);
+      else if (e.key === "ArrowRight") move(1);
+      else if (e.key === "ArrowDown") moveDown();
+      else if (e.key === "ArrowUp") rotate();
+    }
+
+    document.addEventListener("keydown", control);
+
+    draw();
+    const timerId = setInterval(moveDown, 700);
+  </script>
+</body>
+</html>
