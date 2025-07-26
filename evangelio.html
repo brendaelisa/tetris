@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Tetris del Evangelio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="data:," /> 
+  <style>
+    body {
+      background-color: #f0f8ff;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    canvas {
+      background: #fff;
+      display: block;
+      margin: 10px auto;
+      border: 3px solid #333;
+    }
+
+    #mensaje {
+      font-size: 1.2em;
+      margin: 10px;
+      color: #333;
+    }
+
+    .controles {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      padding: 15px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      flex: 1 1 40%;
+      max-width: 150px;
+    }
+
+    .btn:active {
+      background-color: #388e3c;
+    }
+
+    .btn-secondary {
+      background-color: #008CBA; /* Un color diferente para el nuevo botón */
+    }
+
+    .btn-secondary:active {
+      background-color: #006080;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Tetris del Evangelio</h2>
+  <canvas id="tetris" width="240" height="400"></canvas>
+  <div id="mensaje">📖 Esperando primera pieza...</div>
+
+  <div class="controles">
+    <button class="btn" onclick="mover(-1)">⬅️ Izquierda</button>
+    <button class="btn" onclick="rotarPieza()">🔄 Rotar</button>
+    <button class="btn" onclick="mover(1)">➡️ Derecha</button>
+    <button class="btn" onclick="bajar()">⬇️ Bajar</button>
+    <button class="btn btn-secondary" onclick="irAOtroTetris()">🎮 Otro Tetris</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("tetris");
+    const context = canvas.getContext("2d");
+    context.scale(20, 20);
+
+    const mensaje = document.getElementById("mensaje");
+
+    const principios = [
+      "🟢 Fe en Jesucristo",
+      "🔵 Arrepentimiento",
+      "🟣 Bautismo",
+      "🟡 Don del Espíritu Santo",
+      "🟠 Perseverar hasta el fin",
+      "🔴 Servicio cristiano"
+    ];
+
+    const colores = [
+      null,
+      "#FF0D72",
+      "#0DC2FF",
+      "#0DFF72",
+      "#F538FF",
+      "#FF8E0D",
+      "#FFE138",
+      "#3877FF"
+    ];
+
+    const piezas = {
+      T: [[ [0, 0, 0], [1, 1, 1], [0, 1, 0] ]],
+      O: [[ [2, 2], [2, 2] ]],
+      L: [[ [0, 3, 0], [0, 3, 0], [0, 3, 3] ]],
+      J: [[ [0, 4, 0], [0, 4, 0], [4, 4, 0] ]],
+      I: [[ [0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0] ]],
+      S: [[ [0, 6, 6], [6, 6, 0], [0, 0, 0] ]],
+      Z: [[ [7, 7, 0], [0, 7, 7], [0, 0, 0] ]],
+    };
+
+    function crearMatriz(w, h) {
+      const matriz = [];
+      while (h--) matriz.push(new Array(w).fill(0));
+      return matriz;
+    }
+
+    function dibujarMatriz(matriz, offset) {
+      matriz.forEach((fila, y) => {
+        fila.forEach((valor, x) => {
+          if (valor !== 0) {
+            context.fillStyle = colores[valor];
+            context.fillRect(x + offset.x, y + offset.y, 1, 1);
+          }
+        });
+      });
+    }
+
+    function fusionar(arena, jugador) {
+      jugador.matriz.forEach((fila, y) => {
+        fila.forEach((valor, x) => {
+          if (valor !== 0) {
+            arena[y + jugador.pos.y][x + jugador.pos.x] = valor;
+          }
+        });
+      });
+    }
+
+    function rotar(matriz) {
+      return matriz[0].map((_, i) => matriz.map(fila => fila[i])).reverse();
+    }
+
+    function colision(arena, jugador) {
+      const m = jugador.matriz;
+      const o = jugador.pos;
+      for (let y = 0; y < m.length; ++y) {
+        for (let x = 0; x < m[y].length; ++x) {
+          if (m[y][x] !== 0 &&
+              (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function limpiarLineas() {
+      outer: for (let y = arena.length - 1; y >= 0; --y) {
+        for (let x = 0; x < arena[y].length; ++x) {
+          if (arena[y][x] === 0) continue outer;
+        }
+        arena.splice(y, 1);
+        arena.unshift(new Array(arena[0].length).fill(0));
+      }
+    }
+
+    function nuevaPieza() {
+      const piezasTipos = "ILJOTSZ";
+      const tipo = piezasTipos[Math.floor(Math.random() * piezasTipos.length)];
+      jugador.matriz = piezas[tipo][0];
+      jugador.pos.y = 0;
+      jugador.pos.x = Math.floor((arena[0].length - jugador.matriz[0].length) / 2);
+
+      const texto = principios[Math.floor(Math.random() * principios.length)];
+      mensaje.textContent = `📖 Principio del Evangelio: ${texto}`;
+
+      if (colision(arena, jugador)) {
+        arena.forEach(fila => fila.fill(0));
+        mensaje.textContent = "⛔ Juego Terminado - Reinicia la página";
+      }
+    }
+
+    function mover(dir) {
+      jugador.pos.x += dir;
+      if (colision(arena, jugador)) {
+        jugador.pos.x -= dir;
+      }
+    }
+
+    function bajar() {
+      jugador.pos.y++;
+      if (colision(arena, jugador)) {
+        jugador.pos.y--;
+        fusionar(arena, jugador);
+        limpiarLineas();
+        nuevaPieza();
+      }
+      dropCounter = 0;
+    }
+
+    function rotarPieza() {
+      jugador.matriz = rotar(jugador.matriz);
+      if (colision(arena, jugador)) {
+        jugador.matriz = rotar(rotar(rotar(jugador.matriz)));
+      }
+    }
+
+    // Nueva función para redirigir a otro Tetris
+    function irAOtroTetris() {
+      // Aquí puedes cambiar la URL a donde quieras que redirija el botón
+      window.location.href = "https://www.google.com/search?q=jugar+tetris+online"; 
+    }
+
+    function actualizar(tiempo = 0) {
+      const delta = tiempo - anterior;
+      anterior = tiempo;
+      dropCounter += delta;
+      if (dropCounter > dropInterval) {
+        bajar();
+      }
+      dibujar();
+      requestAnimationFrame(actualizar);
+    }
+
+    function dibujar() {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      dibujarMatriz(arena, { x: 0, y: 0 });
+      dibujarMatriz(jugador.matriz, jugador.pos);
+    }
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "ArrowLeft") mover(-1);
+      else if (e.key === "ArrowRight") mover(1);
+      else if (e.key === "ArrowDown") bajar();
+      else if (e.key === "ArrowUp") rotarPieza();
+    });
+
+    const arena = crearMatriz(12, 20);
+    const jugador = {
+      matriz: null,
+      pos: { x: 0, y: 0 }
+    };
+
+    let dropCounter = 0;
+    let dropInterval = 1000;
+    let anterior = 0;
+
+    nuevaPieza();
+    actualizar();
+  </script>
+</body>
+</html>
