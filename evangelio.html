@@ -3,60 +3,82 @@
 <head>
   <meta charset="UTF-8" />
   <title>Tetris del Evangelio</title>
+  <link rel="icon" href="data:," />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
       margin: 0;
       background: #111;
-      color: white;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      font-family: Arial, sans-serif;
     }
+
+    h2 {
+      margin: 10px;
+      color: #0f0;
+    }
+
     #tetris {
       display: grid;
       grid-template-columns: repeat(10, 30px);
       grid-template-rows: repeat(18, 30px);
       gap: 1px;
-      background: #222;
-      margin-top: 10px;
+      background: #333;
+      margin-top: 5px;
     }
+
     .cell {
       width: 30px;
       height: 30px;
-      background: #111;
-      border: 1px solid #333;
+      background: #000;
+      border: 1px solid #222;
     }
+
     .filled {
-      background: #0f0;
+      background: #0fa;
     }
+
     .fixed {
-      background: #090;
+      background: #06c;
     }
+
     .controls {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 10px;
-      margin: 15px;
+      margin: 15px 0;
     }
+
     .btn {
-      background: #444;
+      background: #2a2;
       color: white;
       border: none;
       padding: 10px;
-      font-size: 16px;
-      border-radius: 5px;
-      width: 70px;
+      font-size: 18px;
+      border-radius: 6px;
+      width: 80px;
     }
+
     .btn:active {
-      background: #666;
+      background: #4f4;
     }
-    .score {
-      margin-top: 10px;
-      font-size: 20px;
-      color: #0f0;
+
+    .score, #verse {
+      margin-top: 8px;
+      font-size: 18px;
+      text-align: center;
+      padding: 5px;
+      max-width: 300px;
+    }
+
+    #verse {
+      font-style: italic;
+      color: #aaf;
+      margin: 10px auto;
     }
   </style>
 </head>
@@ -64,6 +86,7 @@
   <h2>Tetris del Evangelio</h2>
   <div id="tetris"></div>
   <div class="score">Puntos: <span id="score">0</span></div>
+  <div id="verse">"Y conoceréis la verdad, y la verdad os hará libres." — Juan 8:32</div>
 
   <div class="controls">
     <button class="btn" onclick="rotate()">⤴️</button>
@@ -77,7 +100,16 @@
     const height = 18;
     const grid = document.getElementById("tetris");
     const scoreDisplay = document.getElementById("score");
+    const verseDisplay = document.getElementById("verse");
     let score = 0;
+
+    const verses = [
+      "Todo lo puedo en Cristo que me fortalece. — Filipenses 4:13",
+      "Jehová es mi pastor; nada me faltará. — Salmo 23:1",
+      "Con Dios todo es posible. — Mateo 19:26",
+      "El Señor es mi luz y mi salvación. — Salmo 27:1",
+      "No temas, porque yo estoy contigo. — Isaías 41:10"
+    ];
 
     const cells = [];
     for (let i = 0; i < width * height; i++) {
@@ -96,7 +128,6 @@
     };
 
     const tetrominoKeys = Object.keys(tetrominoes);
-
     let currentPosition = 4;
     let currentShape = getRandomShape();
 
@@ -160,11 +191,9 @@
 
     function rotate() {
       undraw();
-      const prevRotation = currentShape.rotationIndex;
-      currentShape.rotationIndex = (currentShape.rotationIndex + 1) % currentShape.rotations.length;
-      if (isBlocked(0)) {
-        currentShape.rotationIndex = prevRotation;
-      }
+      const prev = currentShape.rotationIndex;
+      currentShape.rotationIndex = (prev + 1) % currentShape.rotations.length;
+      if (isBlocked(0)) currentShape.rotationIndex = prev;
       draw();
     }
 
@@ -183,8 +212,6 @@
         const start = row * width;
         const line = cells.slice(start, start + width);
         if (line.every(cell => cell.classList.contains("fixed"))) {
-          score += 10;
-          scoreDisplay.textContent = score;
           line.forEach(cell => cell.classList.remove("fixed"));
           const removed = cells.splice(start, width);
           removed.forEach(cell => {
@@ -193,6 +220,9 @@
             grid.insertBefore(newCell, grid.firstChild);
             cells.unshift(newCell);
           });
+          score += 10;
+          scoreDisplay.textContent = score;
+          verseDisplay.textContent = verses[Math.floor(Math.random() * verses.length)];
         }
       }
     }
@@ -201,7 +231,7 @@
       currentShape = getRandomShape();
       currentPosition = 4;
       if (isBlocked(0)) {
-        alert("🙏 ¡Gracias por jugar el Tetris del Evangelio!");
+        alert("🙏 Juego terminado. Gracias por jugar el Tetris del Evangelio.");
         clearInterval(timerId);
       } else {
         draw();
